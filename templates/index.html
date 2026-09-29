@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>EduGenie - Learning Assistant</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+            min-height: 100vh;
+        }
+
+        header {
+            background: #2563eb;
+            color: white;
+            padding: 25px 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 30px;
+            margin-bottom: 8px;
+        }
+
+        header p {
+            font-size: 16px;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 900px;
+            margin: 35px auto;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 15px;
+            margin-bottom: 20px;
+        }
+
+        select {
+            background: white;
+        }
+
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        button {
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: 8px;
+            background: #2563eb;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        button:disabled {
+            background: #93c5fd;
+            cursor: not-allowed;
+        }
+
+        .result {
+            margin-top: 25px;
+            padding: 20px;
+            background: #f8fafc;
+            border-left: 5px solid #2563eb;
+            border-radius: 8px;
+            min-height: 80px;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+
+        .loading {
+            color: #2563eb;
+            font-weight: bold;
+        }
+
+        footer {
+            text-align: center;
+            padding: 25px;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        @media (max-width: 600px) {
+            header h1 {
+                font-size: 24px;
+            }
+
+            .container {
+                width: 94%;
+            }
+
+            .card {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>EduGenie</h1>
+        <p>Google Gemini Powered Learning Assistant</p>
+    </header>
+
+    <div class="container">
+
+        <div class="card">
+
+            <label for="task">Select Learning Task</label>
+
+            <select id="task">
+                <option value="qa">Question & Answer</option>
+                <option value="explain">Explain a Concept</option>
+                <option value="quiz">Generate Quiz</option>
+                <option value="summarize">Summarize Text</option>
+                <option value="learn">Personalized Learning Path</option>
+            </select>
+
+            <label for="inputText">Enter your question or topic</label>
+
+            <textarea
+                id="inputText"
+                placeholder="Enter your question, topic, or educational text here..."
+            ></textarea>
+
+            <button id="submitButton" onclick="processRequest()">
+                Ask EduGenie
+            </button>
+
+            <div id="result" class="result">
+                Your AI-generated response will appear here.
+            </div>
+
+        </div>
+
+    </div>
+
+    <footer>
+        EduGenie &copy; 2026 | AI-Powered Learning Assistant
+    </footer>
+
+    <script>
+        async function processRequest() {
+
+            const task = document.getElementById("task").value;
+            const inputText = document.getElementById("inputText").value.trim();
+            const result = document.getElementById("result");
+            const button = document.getElementById("submitButton");
+
+            if (!inputText) {
+                result.textContent = "Please enter a question or topic.";
+                return;
+            }
+
+            const endpoints = {
+                qa: "/qa",
+                explain: "/explain",
+                quiz: "/quiz",
+                summarize: "/summarize",
+                learn: "/learn/recommendations"
+            };
+
+            result.innerHTML = '<span class="loading">EduGenie is thinking...</span>';
+            button.disabled = true;
+
+            try {
+
+                const response = await fetch(endpoints[task], {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        text: inputText
+                    })
+                });
+
+                const contentType = response.headers.get("content-type") || "";
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(
+                        "Server error (" +
+                        response.status +
+                        "): " +
+                        errorText
+                    );
+                }
+
+                if (!contentType.includes("application/json")) {
+                    const text = await response.text();
+                    throw new Error("Unexpected server response: " + text);
+                }
+
+                const data = await response.json();
+
+                result.textContent =
+                    data.answer || "No answer was returned.";
+
+            } catch (error) {
+
+                result.textContent =
+                    "Error: " + error.message;
+
+            } finally {
+
+                button.disabled = false;
+
+            }
+        }
+    </script>
+
+</body>
+</html>
